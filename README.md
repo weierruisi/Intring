@@ -6,7 +6,7 @@
 <div>
 <a href="https://github.com/weierruisi/Intring/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/weierruisi/Intring" /></a>
 <a href="https://github.com/weierruisi/Intring/forks" target="_blank"><img src="https://img.shields.io/github/forks/weierruisi/Intring" /></a>
-<a href="https://github.com/weierruisi/Intring/actions" target="_blank"><img src="https://img.shields.io/badge/build-passing-44aa33?style=flat&labelColor=555555" /></a>
+<img src="https://img.shields.io/badge/ESP--IDF-v5.3.1-blue?style=flat&labelColor=555555" />
 <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-e8753f?style=flat&labelColor=555555" /></a>
 </div>
 
@@ -16,11 +16,20 @@
 
 ---
 
-💡 **Inter-Ring** 是一个基于 `ESP32-C3` 的智能戒指固件项目，集成轨迹球、空鼠、手势识别、BLE HID、低功耗休眠与 BLE OTA 升级。
+💡 **Inter-Ring** 是一个基于 `ESP32-C3` 的智能交互戒指项目，集成轨迹球、空鼠、手势识别、BLE HID、低功耗休眠与 BLE OTA 升级。
 
-- 📺 演示视频：`TODO`
-- 🧩 硬件资料：`TODO`
+- 📺 演示视频：`后续发布`
+- 🧩 硬件资料：`后续发布`
 - 🚀 适用场景：迷你鼠标、体感遥控、演示控制、移动端快捷操作
+- 👓 适用设备：AR/VR/MR眼镜、平板、PC等
+
+## 📷 实物图
+
+| 充电仓&戒指 | 佩戴效果 |
+| --- | --- |
+| ![Inter-Ring 实物图（正面）](./pics/pic2.jpg) | ![Inter-Ring 实物图（佩戴）](./pics/pic3.jpg) |
+
+
 
 > [!NOTE]
 > 本 README 聚焦“怎么用、怎么配、每个按键做什么”。
@@ -285,7 +294,26 @@ Inter-Ring/
 - `--no-response`：无响应写（更快但风险更高）
 
 ```powershell
-python tools/ota/ble_ota_upload.py --address B0:81:84:6D:25:D6 --bin build_clean/HID_Test.bin
+python tools/ota/ble_ota_upload.py --address xx:xx:xx:xx:xx:xx --bin build/Intring.bin
+```
+
+运行结果示例：
+
+```text
+[INFO][0 min 0 s] Firmware: build/Intring.bin
+[INFO][0 min 0 s] Size: 980208 bytes
+[INFO][0 min 0 s] Address: xx:xx:xx:xx:xx:xx
+[INFO][0 min 0 s] CTRL UUID: 0000fff1-0000-1000-8000-00805f9b34fb
+[INFO][0 min 0 s] DATA UUID: 0000fff2-0000-1000-8000-00805f9b34fb
+[INFO][0 min 0 s] Chunk size: 244
+[INFO][0 min 0 s] Data write response: True
+[INFO][0 min 12 s] Connected
+[INFO][0 min 12 s] CTRL notify enabled
+[INFO][0 min 12 s] Send START (0x01)
+[NOTIFY] CTRL status: xx
+[INFO][0 min 0 s] Progress: 4880/980208 (0.50%), Speed: 5.36 kB/s, Avg: 5.36 kB/s, ETA: 2 min 57 s
+...
+[INFO][2 min 48 s] Send FINISH (0x02)
 ```
 
 ### 🔌 串口数据采集
@@ -334,5 +362,5 @@ python tools/nn/train_model.py
 ## 📜 许可证
 
 本仓库中的固件与软件源码基于 [Apache License 2.0](./LICENSE) 开源。
-
-硬件设计文件未包含在本仓库中，例如原理图、PCB、Gerber、BOM、结构文件等。相关硬件资料在硬创社单独提供，具体授权与使用范围以硬创社页面说明为准。
+> [!WARNING]
+> 硬件设计文件未包含在本仓库中，例如原理图、PCB、Gerber、BOM、结构文件等。相关硬件资料在硬创社单独提供，具体授权与使用范围以硬创社页面说明为准。
