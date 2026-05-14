@@ -1,0 +1,379 @@
+/*
+ ******************************************************************************
+ * @file    _read_data_polling.c
+ * @author  Sensors Software Solution Team
+ * @brief   This file show how to get data from sensor.
+ *
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+ * All rights reserved.</center></h2>
+ *
+ * This software component is licensed by ST under BSD 3-Clause license,
+ * the "License"; You may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at:
+ *                        opensource.org/licenses/BSD-3-Clause
+ *
+ ******************************************************************************
+ */
+
+/*
+ * This example was developed using the following STMicroelectronics
+ * evaluation boards:
+ *
+ * - STEVAL_MKI109V3
+ * - NUCLEO_F401RE
+ * - DISCOVERY_SPC584B
+ *
+ * Used interfaces:
+ *
+ * STEVAL_MKI109V3    - Host side:   USB (Virtual COM)
+ *                    - Sensor side: SPI(Default) / I2C(supported)
+ *
+ * NUCLEO_STM32F401RE - Host side: UART(COM) to USB bridge
+ *                    - Sensor side: I2C(Default) / SPI(supported)
+ *
+ * DISCOVERY_SPC584B  - Host side: UART(COM) to USB bridge
+ *                    - Sensor side: I2C(Default) / SPI(supported)
+ *
+ * If you need to run this example on a different hardware platform a
+ * modification of the functions: `platform_write`, `platform_read`,
+ * `tx_com` and 'platform_init' is required.
+ *
+ */
+
+/* STMicroelectronics evaluation boards definition
+ *
+ * Please uncomment ONLY the evaluation boards in use.
+ * If a different hardware is used please comment all
+ * following target board and redefine yours.
+ */
+
+//#define STEVAL_MKI109V3  /* little endian */
+//#define NUCLEO_F401RE    /* little endian */
+//#define SPC584B_DIS      /* big endian */
+
+/* ATTENTION: By default the driver is little endian. If you need switch
+ *            to big endian please see "Endianness definitions" in the
+ *            header file of the driver (_reg.h).
+ */
+
+
+#if defined(STEVAL_MKI109V3)
+/* MKI109V3: Define communication interface */
+#define SENSOR_BUS hspi2
+/* MKI109V3: Vdd and Vddio power supply values */
+#define PWM_3V3 915
+
+#elif defined(NUCLEO_F401RE)
+/* NUCLEO_F401RE: Define communication interface */
+#define SENSOR_BUS hi2c1
+
+#elif defined(SPC584B_DIS)
+/* DISCOVERY_SPC584B: Define communication interface */
+#define SENSOR_BUS I2CD1
+
+#endif
+
+
+#include "lsm6ds3tr_c_read_data_polling.h"
+#include "project_config.h"
+
+#if LSM6DS3TR_C_READ_DATA_POLLING_EN
+
+/* Private macro -------------------------------------------------------------*/
+#define    BOOT_TIME            15 //ms
+#define    TX_BUF_DIM         1000
+
+/* Private variables ---------------------------------------------------------*/
+static int16_t data_raw_acceleration[3];
+static int16_t data_raw_angular_rate[3];
+static int16_t data_raw_temperature;
+static float acceleration_mg[3];
+static float angular_rate_mdps[3];
+static float temperature_degC;
+static uint8_t whoamI, rst;
+static uint8_t tx_buffer[TX_BUF_DIM];
+
+/* Extern variables ----------------------------------------------------------*/
+
+
+/* Main Example --------------------------------------------------------------*/
+void lsm6ds3tr_c_read_data_polling(void)
+{
+  /* Initialize mems driver interface */
+  stmdev_ctx_t dev_ctx;
+  dev_ctx.write_reg = platform_write;
+  dev_ctx.read_reg = platform_read;
+  dev_ctx.mdelay = platform_delay;
+  // dev_ctx.handle = &SENSOR_BUS;
+  /* Init test platform */
+  platform_init();
+  /* Wait sensor boot time */
+  platform_delay(BOOT_TIME);
+  /* Check device ID */
+  whoamI = 0;
+  lsm6ds3tr_c_device_id_get(&dev_ctx, &whoamI);
+
+  if ( whoamI != LSM6DS3TR_C_ID )
+  {
+    ESP_LOGE("lsm6ds3tr", "Erro whoamI: %X", whoamI);
+    while (1) /*manage here device not found */
+    {
+      vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
+  }
+  ESP_LOGI("lsm6ds3tr", "Right ID whoamI: %X", whoamI);
+
+  /* Restore default configuration */
+  lsm6ds3tr_c_reset_set(&dev_ctx, PROPERTY_ENABLE);
+
+  do {
+    lsm6ds3tr_c_reset_get(&dev_ctx, &rst);
+  } while (rst);
+
+  /* Enable Block Data Update */
+  lsm6ds3tr_c_block_data_update_set(&dev_ctx, PROPERTY_ENABLE);
+  /* Set Output Data Rate */
+  lsm6ds3tr_c_xl_data_rate_set(&dev_ctx, LSM6DS3TR_C_XL_ODR_12Hz5);
+  lsm6ds3tr_c_gy_data_rate_set(&dev_ctx, LSM6DS3TR_C_GY_ODR_12Hz5);
+  /* Set full scale */
+  lsm6ds3tr_c_xl_full_scale_set(&dev_ctx, LSM6DS3TR_C_2g);
+  lsm6ds3tr_c_gy_full_scale_set(&dev_ctx, LSM6DS3TR_C_2000dps);
+  /* Configure filtering chain(No aux interface) */
+  /* Accelerometer - analog filter */
+  lsm6ds3tr_c_xl_filter_analog_set(&dev_ctx,
+                                   LSM6DS3TR_C_XL_ANA_BW_400Hz);
+  /* Accelerometer - LPF1 path ( LPF2 not used )*/
+  //lsm6ds3tr_c_xl_lp1_bandwidth_set(&dev_ctx, LSM6DS3TR_C_XL_LP1_ODR_DIV_4);
+  /* Accelerometer - LPF1 + LPF2 path */
+  lsm6ds3tr_c_xl_lp2_bandwidth_set(&dev_ctx,
+                                   LSM6DS3TR_C_XL_LOW_NOISE_LP_ODR_DIV_100);
+  /* Accelerometer - High Pass / Slope path */
+  //lsm6ds3tr_c_xl_reference_mode_set(&dev_ctx, PROPERTY_DISABLE);
+  //lsm6ds3tr_c_xl_hp_bandwidth_set(&dev_ctx, LSM6DS3TR_C_XL_HP_ODR_DIV_100);
+  /* Gyroscope - filtering chain */
+  lsm6ds3tr_c_gy_band_pass_set(&dev_ctx,
+                               LSM6DS3TR_C_HP_260mHz_LP1_STRONG);
+
+  /* Read samples in polling mode (no int) */
+  while (1) {
+    /* Read output only if new value is available */
+    lsm6ds3tr_c_reg_t reg;
+    lsm6ds3tr_c_status_reg_get(&dev_ctx, &reg.status_reg);
+
+    if (reg.status_reg.xlda) {
+      /* Read magnetic field data */
+      memset(data_raw_acceleration, 0x00, 3 * sizeof(int16_t));
+      lsm6ds3tr_c_acceleration_raw_get(&dev_ctx,
+                                       data_raw_acceleration);
+      acceleration_mg[0] = lsm6ds3tr_c_from_fs2g_to_mg(
+                             data_raw_acceleration[0]);
+      acceleration_mg[1] = lsm6ds3tr_c_from_fs2g_to_mg(
+                             data_raw_acceleration[1]);
+      acceleration_mg[2] = lsm6ds3tr_c_from_fs2g_to_mg(
+                             data_raw_acceleration[2]);
+      snprintf((char *)tx_buffer, sizeof(tx_buffer),
+              "Acceleration [mg]:%4.2f\t%4.2f\t%4.2f\r\n",
+              acceleration_mg[0], acceleration_mg[1], acceleration_mg[2]);
+      tx_com( tx_buffer, strlen( (char const *)tx_buffer ) );
+    }
+
+    if (reg.status_reg.gda) {
+      /* Read magnetic field data */
+      memset(data_raw_angular_rate, 0x00, 3 * sizeof(int16_t));
+      lsm6ds3tr_c_angular_rate_raw_get(&dev_ctx,
+                                       data_raw_angular_rate);
+      angular_rate_mdps[0] = lsm6ds3tr_c_from_fs2000dps_to_mdps(
+                               data_raw_angular_rate[0]);
+      angular_rate_mdps[1] = lsm6ds3tr_c_from_fs2000dps_to_mdps(
+                               data_raw_angular_rate[1]);
+      angular_rate_mdps[2] = lsm6ds3tr_c_from_fs2000dps_to_mdps(
+                               data_raw_angular_rate[2]);
+      snprintf((char *)tx_buffer, sizeof(tx_buffer),
+              "Angular rate [mdps]:%4.2f\t%4.2f\t%4.2f\r\n",
+              angular_rate_mdps[0], angular_rate_mdps[1], angular_rate_mdps[2]);
+      tx_com( tx_buffer, strlen( (char const *)tx_buffer ) );
+    }
+
+    if (reg.status_reg.tda) {
+      /* Read temperature data */
+      memset(&data_raw_temperature, 0x00, sizeof(int16_t));
+      lsm6ds3tr_c_temperature_raw_get(&dev_ctx, &data_raw_temperature);
+      temperature_degC = lsm6ds3tr_c_from_lsb_to_celsius(
+                           data_raw_temperature );
+      snprintf((char *)tx_buffer, sizeof(tx_buffer), "Temperature [degC]:%6.2f\r\n",
+              temperature_degC );
+      tx_com( tx_buffer, strlen( (char const *)tx_buffer ) );
+    }
+  }
+}
+#endif
+/*
+ * @brief  Write generic device register (platform dependent)
+ *
+ * @param  handle    customizable argument. In this examples is used in
+ *                   order to select the correct sensor bus handler.
+ * @param  reg       register to write
+ * @param  bufp      pointer to data to write in register reg
+ * @param  len       number of consecutive register to write
+ *
+ */
+int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
+                              uint16_t len)
+{
+#if defined(NUCLEO_F401RE)
+  HAL_I2C_Mem_Write(handle, LSM6DS3TR_C_I2C_ADD_L, reg,
+                    I2C_MEMADD_SIZE_8BIT, (uint8_t*) bufp, len, 1000);
+#elif defined(STEVAL_MKI109V3)
+  HAL_GPIO_WritePin(CS_up_GPIO_Port, CS_up_Pin, GPIO_PIN_RESET);
+  HAL_SPI_Transmit(handle, &reg, 1, 1000);
+  HAL_SPI_Transmit(handle, (uint8_t*) bufp, len, 1000);
+  HAL_GPIO_WritePin(CS_up_GPIO_Port, CS_up_Pin, GPIO_PIN_SET);
+#elif defined(SPC584B_DIS)
+  i2c_lld_write(handle,  LSM6DS3TR_C_I2C_ADD_L & 0xFE, reg,
+               (uint8_t*) bufp, len);
+#elif defined(ESP_IDF)
+  esp_err_t ret = ESP_OK;
+
+  i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+  ret = i2c_master_start(cmd);
+  if(ret != ESP_OK) goto err;
+  ret = i2c_master_write_byte(cmd, LSM6DS3TR_C_I2C_W_ADD_L, I2C_MASTER_ACK);
+  if(ret != ESP_OK) goto err;
+  ret = i2c_master_write_byte(cmd, reg, I2C_MASTER_ACK); // 写入寄存器地址
+  if(ret != ESP_OK) goto err;
+  ret = i2c_master_write(cmd, bufp, len, I2C_MASTER_LAST_NACK); // 写入寄存器数据
+  if(ret != ESP_OK) goto err;
+  ret = i2c_master_stop(cmd);
+  if(ret != ESP_OK) goto err;
+  ret = i2c_master_cmd_begin(I2C_NUM, cmd, 1000 / portTICK_PERIOD_MS);
+  if(ret != ESP_OK) goto err;
+  i2c_cmd_link_delete(cmd);
+
+err:
+  if(ret != ESP_OK) ESP_LOGE("lsm6ds3tr_c_read_data_polling", "platform_write Err");
+
+  return ret;
+
+#endif
+  return 0;
+}
+
+/*
+ * @brief  Read generic device register (platform dependent)
+ *
+ * @param  handle    customizable argument. In this examples is used in
+ *                   order to select the correct sensor bus handler.
+ * @param  reg       register to read
+ * @param  bufp      pointer to buffer that store the data read
+ * @param  len       number of consecutive register to read
+ *
+ */
+int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
+                             uint16_t len)
+{
+#if defined(NUCLEO_F401RE)
+  HAL_I2C_Mem_Read(handle, LSM6DS3TR_C_I2C_ADD_L, reg,
+                   I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
+#elif defined(STEVAL_MKI109V3)
+  reg |= 0x80;
+  HAL_GPIO_WritePin(CS_up_GPIO_Port, CS_up_Pin, GPIO_PIN_RESET);
+  HAL_SPI_Transmit(handle, &reg, 1, 1000);
+  HAL_SPI_Receive(handle, bufp, len, 1000);
+  HAL_GPIO_WritePin(CS_up_GPIO_Port, CS_up_Pin, GPIO_PIN_SET);
+#elif defined(SPC584B_DIS)
+  i2c_lld_read(handle, LSM6DS3TR_C_I2C_ADD_L & 0xFE, reg, bufp, len);
+#elif defined(ESP_IDF)
+    esp_err_t ret = ESP_OK;
+
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    ret = i2c_master_start(cmd);
+    if(ret != ESP_OK) goto err;
+    ret = i2c_master_write_byte(cmd, LSM6DS3TR_C_I2C_W_ADD_L, I2C_MASTER_ACK);
+    if(ret != ESP_OK) goto err;
+    ret = i2c_master_write_byte(cmd, reg, I2C_MASTER_ACK);
+    if(ret != ESP_OK) goto err;
+    ret = i2c_master_start(cmd);
+    if(ret != ESP_OK) goto err;
+    ret = i2c_master_write_byte(cmd, LSM6DS3TR_C_I2C_R_ADD_L, I2C_MASTER_ACK);
+    if(ret != ESP_OK) goto err;
+    ret = i2c_master_read(cmd, bufp, len, I2C_MASTER_LAST_NACK);
+    if(ret != ESP_OK) goto err;
+    ret = i2c_master_stop(cmd);
+    if(ret != ESP_OK) goto err;
+    ret = i2c_master_cmd_begin(I2C_NUM, cmd, 1000 / portTICK_PERIOD_MS);
+    if(ret != ESP_OK) goto err;
+    i2c_cmd_link_delete(cmd);
+
+err:
+  if(ret != ESP_OK) ESP_LOGE("lsm6ds3tr_c_read_data_polling", "platform_read Err");
+#endif
+  return 0;
+}
+
+/*
+ * @brief  Write generic device register (platform dependent)
+ *
+ * @param  tx_buffer     buffer to transmit
+ * @param  len           number of byte to send
+ *
+ */
+void tx_com(uint8_t *tx_buffer, uint16_t len)
+{
+#if defined(NUCLEO_F401RE)
+  HAL_UART_Transmit(&huart2, tx_buffer, len, 1000);
+#elif defined(STEVAL_MKI109V3)
+  CDC_Transmit_FS(tx_buffer, len);
+#elif defined(SPC584B_DIS)
+  sd_lld_write(&SD2, tx_buffer, len);
+#elif defined(ESP_IDF)
+
+  printf((char*)tx_buffer);
+
+#endif
+}
+
+/*
+ * @brief  platform specific delay (platform dependent)
+ *
+ * @param  ms        delay in ms
+ *
+ */
+void platform_delay(uint32_t ms)
+{
+#if defined(NUCLEO_F401RE) | defined(STEVAL_MKI109V3)
+  HAL_Delay(ms);
+#elif defined(SPC584B_DIS)
+  osalThreadDelayMilliseconds(ms);
+#elif defined(ESP_IDF)
+  vTaskDelay(ms / portTICK_PERIOD_MS);
+#endif
+}
+
+/*
+ * @brief  platform specific initialization (platform dependent)
+ */
+void platform_init(void)
+{
+#if defined(STEVAL_MKI109V3)
+  TIM3->CCR1 = PWM_3V3;
+  TIM3->CCR2 = PWM_3V3;
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+  HAL_Delay(1000);
+#elif defined(ESP_IDF)
+  i2c_config_t conf = {
+        .mode = I2C_MODE_MASTER,
+        .sda_io_num = CONFIG_GPIO_I2C_SDA,
+        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+        .scl_io_num = CONFIG_GPIO_I2C_SCK,
+        .scl_pullup_en = GPIO_PULLUP_ENABLE,
+        .master.clk_speed = 400000,
+    };
+    i2c_param_config(I2C_NUM, &conf);
+    i2c_driver_install(I2C_NUM, conf.mode, 0, 0, 0);
+#endif
+}
+

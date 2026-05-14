@@ -1,0 +1,108 @@
+menu "inter-ring config"
+    config AIRMOUSE_EN
+        bool  "air mouse enable"
+        default y
+
+    config IMU_QUATERNTION_TEST_EN
+        bool  "Enable only the IMU_QUATERNTION_TEST_EN program to compile quaternion code, with the serial port continuously outputting world coordinate system results"
+        default y
+    
+    config IMU_QUATERNION_PRINT_EN
+        bool  "At the same time, enable IMU_QUATERNION-PRINT_EN to retain all functions of the ring, and control the serial port to output acceleration in the world coordinate system through touch buttons"
+        depends on IMU_QUATERNTION_TEST_EN
+        default y
+
+    config DFS_EN
+        bool  "dynamic frequency shift enable, default true"
+        default y
+        
+    config TOUCH_SWITCH_TEST_EN
+        bool "touch switch test en"
+        default n
+        
+    config TRACK_BALL_TEST_EN
+        bool "touch ball test en"
+        default n
+    
+    menu "inter-ring gpios config"
+        menu "key gpios config"
+            config GPIO_BALLKEY
+                int "ball key gpio"
+                default 8
+            config GPIO_TOUCHKEY_A
+                int "touch keyA gpio"
+                default 4
+            config GPIO_TOUCHKEY_B
+                int "touch keyB gpio"
+                default 2
+        endmenu
+
+        menu "trackball direction gpios config"
+            config GPIO_FORWARD
+                int "forward"
+                default 6
+            config GPIO_BACK
+                int "back"
+                default 3
+            config GPIO_RIGHT
+                int "right"
+                default 5
+            config GPIO_LEFT
+                int "left"
+                default 7
+        endmenu
+
+        menu "LED&PM gpio config"
+            config GPIO_LED_PM_NUM
+                int "led & power manage gpio"
+                default 10
+        endmenu
+
+        menu "i2c_lsm6ds3tr"
+            config GPIO_I2C_SDA
+                int "GPIO_I2C_SDA"
+                default 18
+
+            config GPIO_I2C_SCK
+                int "GPIO_I2C_SCK"
+                default 19
+        endmenu
+    endmenu
+    
+    menu "airmouse parameter config"
+        config MOUSE_STEP
+            int "MOUSE_STEP when mode in trace ball"
+            default 3
+            
+        config OP_COUNT_MAX
+            int "OP_COUNT_MAX"
+            default 6
+            
+        config OP_DELAY_MAX
+            int "OP_DELAY_MAX"
+            default 30
+            
+        config DELAY_COUNTMAX
+            int "DELAY_COUNTMAX"
+            default 20        
+    endmenu
+
+    menu "gesture recognition"
+        config COLLECT_DATA_NUM
+            int "Number of sampling points"
+            default 128
+
+        config COLLECT_DATA_EN
+            bool "Enable data collection to train models"
+            default n
+
+        config TEST_AI_MODEL_EN
+            bool "Enable gesture recognition model test"
+            default n
+
+        config AI_MODEL_EN
+            bool "Enable gesture recognition model"
+            default y
+    endmenu
+
+endmenu
