@@ -3,9 +3,9 @@
 <h1>Inter-Ring</h1>
 
 <div>
-<a href="https://github.com/weierruisi/Intring/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/weierruisi/Intring?style=flat&label=stars&labelColor=555555&color=9ca3af" /></a>
-<a href="https://github.com/weierruisi/Intring/forks" target="_blank"><img src="https://img.shields.io/github/forks/weierruisi/Intring?style=flat&label=forks&labelColor=555555&color=9ca3af" /></a>
-<a href="https://github.com/weierruisi/Intring/actions" target="_blank"><img src="https://img.shields.io/badge/build-passing-44aa33?style=flat&labelColor=555555" /></a>
+<a href="https://github.com/weierruisi/Intring/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/weierruisi/Intring" /></a>
+<a href="https://github.com/weierruisi/Intring/forks" target="_blank"><img src="https://img.shields.io/github/forks/weierruisi/Intring" /></a>
+<img src="https://img.shields.io/badge/ESP--IDF-v5.3.1-blue?style=flat&labelColor=555555" />
 <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-e8753f?style=flat&labelColor=555555" /></a>
 </div>
 
@@ -15,11 +15,18 @@
 
 ---
 
-💡 **Inter-Ring** is an `ESP32-C3` smart-ring firmware project with trackball input, air-mouse control, gesture recognition, BLE HID, low-power sleep, and BLE OTA upgrades.
+💡 **Inter-Ring** is an `ESP32-C3` smart interactive ring project with trackball input, air-mouse control, gesture recognition, BLE HID, low-power sleep, and BLE OTA upgrades.
 
-- 📺 Demo Video: `TODO`
-- 🧩 Hardware Package: `TODO`
+- 📺 Demo Video: `Coming soon`
+- 🧩 Hardware Package: `Coming soon`
 - 🚀 Use Cases: mini mouse, motion remote, presentation control, mobile shortcuts
+- 👓 Applicable Devices: AR/VR/MR glasses, tablets, PCs, etc.
+
+## 📷 Device Photos
+
+| Charging Case & Ring | Wearing |
+| --- | --- |
+| ![Inter-Ring device photo (front)](./pics/pic2.jpg) | ![Inter-Ring device photo (wearing)](./pics/pic3.jpg) |
 
 > [!NOTE]
 > This README focuses on practical usage: what each key does, how modes switch, and how to use tools quickly.
@@ -283,7 +290,26 @@ Common args:
 - `--no-response`: write without response (faster, less reliable)
 
 ```powershell
-python tools/ota/ble_ota_upload.py --address B0:81:84:6D:25:D6 --bin build_clean/HID_Test.bin
+python tools/ota/ble_ota_upload.py --address xx:xx:xx:xx:xx:xx --bin build/Intring.bin
+```
+
+Example output:
+
+```text
+[INFO][0 min 0 s] Firmware: build/Intring.bin
+[INFO][0 min 0 s] Size: 980208 bytes
+[INFO][0 min 0 s] Address: xx:xx:xx:xx:xx:xx
+[INFO][0 min 0 s] CTRL UUID: 0000fff1-0000-1000-8000-00805f9b34fb
+[INFO][0 min 0 s] DATA UUID: 0000fff2-0000-1000-8000-00805f9b34fb
+[INFO][0 min 0 s] Chunk size: 244
+[INFO][0 min 0 s] Data write response: True
+[INFO][0 min 12 s] Connected
+[INFO][0 min 12 s] CTRL notify enabled
+[INFO][0 min 12 s] Send START (0x01)
+[NOTIFY] CTRL status: xx
+[INFO][0 min 0 s] Progress: 4880/980208 (0.50%), Speed: 5.36 kB/s, Avg: 5.36 kB/s, ETA: 2 min 57 s
+...
+[INFO][2 min 48 s] Send FINISH (0x02)
 ```
 
 ### 🔌 Serial Data Collector
@@ -333,4 +359,5 @@ python tools/nn/train_model.py
 
 Firmware and software source code in this repository are licensed under the [Apache License 2.0](./LICENSE).
 
-Hardware design files are not included in this repository, including schematics, PCB files, Gerber files, BOM, and enclosure/mechanical files. Hardware materials are provided separately on 硬创社, and their allowed usage should follow the terms stated on that platform.
+> [!WARNING]
+> Hardware design files are not included in this repository, including schematics, PCB files, Gerber files, BOM, and enclosure/mechanical files. Hardware materials are provided separately on 硬创社, and their allowed usage should follow the terms stated on that platform.
