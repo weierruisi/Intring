@@ -1,6 +1,6 @@
 ﻿<div align="center">
 
-<h1>Inter-Ring</h1>
+<h1>Intring</h1>
 
 <div>
 <a href="https://github.com/weierruisi/Intring/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/weierruisi/Intring" /></a>
@@ -15,7 +15,7 @@
 
 ---
 
-💡 **Inter-Ring** is an `ESP32-C3` smart interactive ring project with trackball input, air-mouse control, gesture recognition, BLE HID, low-power sleep, and BLE OTA upgrades.
+💡 **Intring** is an `ESP32-C3` smart interactive ring project with trackball input, air-mouse control, gesture recognition, BLE HID, low-power sleep, and BLE OTA upgrades.
 
 - 📺 Demo Video: `Coming soon`
 - 🧩 Hardware Package: `Coming soon`
@@ -26,7 +26,7 @@
 
 | Charging Case & Ring | Wearing |
 | --- | --- |
-| ![Inter-Ring device photo (front)](./pics/pic2.jpg) | ![Inter-Ring device photo (wearing)](./pics/pic3.jpg) |
+| ![Intring device photo (front)](./pics/pic2.jpg) | ![Intring device photo (wearing)](./pics/pic3.jpg) |
 
 > [!NOTE]
 > This README focuses on practical usage: what each key does, how modes switch, and how to use tools quickly.
@@ -47,11 +47,59 @@
 | Entry | Description |
 | --- | --- |
 | 🧱 [System Block Diagram](#system-block-diagram) | A brief description of the project's functional implementation |
+| 🚀 [Usage Guide](#usage-guide) | First flash, BLE OTA upgrade, and air-mouse calibration |
 | 🔌 [Pin Configuration and Defaults](#pin-configuration-and-defaults) | First stop for wiring/remap work |
 | 🧪 [Feature Guide (Detailed)](#feature-guide-detailed) | Full behavior of keys/modes/gestures |
 | 📁 [Project Structure](#project-structure) | Codebase layout |
 | 🧰 [tools Usage Guide](#tools-usage-guide) | OTA/data/training scripts |
 | 📜 [License](#license) | License boundary between software and hardware materials |
+
+---
+
+<a id="usage-guide"></a>
+
+## 🚀 Usage Guide
+
+### 1. Serial Flashing (Required for First Flash)
+
+The first firmware installation must be done over the serial port. BLE OTA can be used for later updates after the initial flash is complete.
+
+1. Connect the FPC main board to the downloader, then connect the downloader to your computer.
+2. Manually enter download mode: hold `BOOT` -> press `RST` -> release `RST` -> release `BOOT`.
+3. Build the project and use `esptool.py` to write the firmware to the `ESP32-C3`.
+
+```bash
+idf.py build
+python -m esptool --chip esp32c3 --port <PORT> --baud 460800 write_flash @build/flash_args
+```
+
+> [!TIP]
+> Replace `<PORT>` with your local serial port, such as `COM3` on Windows or `/dev/ttyUSB0` on Linux/macOS.
+
+### 2. BLE OTA Wireless Upgrade (Recommended for Later Updates)
+
+After the first serial flash, BLE OTA is recommended for later firmware updates.
+
+1. Record the `ESP32-C3` BLE MAC address in advance.
+2. Clone or pull this repository locally, then build the `.bin` file to be updated.
+3. Run `tools/ota/ble_ota_upload.py` with the target MAC address and the `.bin` file to push the firmware wirelessly.
+
+```bash
+python tools/ota/ble_ota_upload.py --address xx:xx:xx:xx:xx:xx --bin build/Intring.bin
+```
+
+### 3. First-Time Air-Mouse Calibration
+
+Before using air-mouse mode for the first time, perform one calibration.
+
+1. Switch Intring to air-mouse mode.
+2. Place Intring flat on a desk and keep it completely still.
+3. Long-press `A + B` together, then release the keys when the LED status indicator starts blinking.
+4. After release, Intring will calibrate automatically. Keep it still during the calibration process.
+5. When calibration is complete, the LED will fast-blink. After Bluetooth is connected, the LED will stay steady ON.
+
+> [!IMPORTANT]
+> Do not move or shake Intring during calibration, otherwise the air-mouse attitude baseline may be inaccurate.
 
 ---
 
@@ -164,7 +212,7 @@ When OFF:
 
 | Trigger | Key Event | Branch Behavior |
 | --- | --- | --- |
-| A + B long press | `KEY_TOUCH_A_B_LPRESS` | Non-air-mouse: reboot; air-mouse: calibrate + save NVS + reboot |
+| A + B long press | `KEY_TOUCH_A_B_LPRESS` | Non-air-mouse: reboot; air-mouse: release after LED blink, then calibrate and save NVS |
 
 ### 6. ⌨️ Full Key Event Table (Standard Firmware)
 
@@ -180,7 +228,7 @@ When OFF:
 | Long press | B | Same class as B single-click (with cadence delay) |
 | Double click | A | Toggle Trackball / Air Mouse |
 | Double click | B | Toggle Gesture ON/OFF |
-| Long press | A + B | Air-mouse calibration + reboot, or direct reboot |
+| Long press | A + B | Trigger air-mouse calibration in air-mouse mode, or direct reboot outside air-mouse mode |
 | Combo | A + B + BALL | Switch Win/Android + reboot |
 
 ### 7. 🧭 Gesture Mapping
@@ -239,7 +287,7 @@ When `CONFIG_COLLECT_DATA_EN=1`:
 ## 📁 Project Structure
 
 ```text
-Inter-Ring/
+Intring/
 ├─ components/
 │  ├─ air_mouse/
 │  ├─ ble_hid/

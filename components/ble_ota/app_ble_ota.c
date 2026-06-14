@@ -47,6 +47,8 @@ static esp_gatt_if_t s_gatts_if = 0;
 static uint16_t s_conn_id = 0;
 static bool s_is_connected = false;
 static bool s_ota_running = false;
+static bool s_conn_params_requested = false;
+static esp_bd_addr_t s_conn_bda = {0};
 static esp_ota_handle_t s_ota_handle = 0;
 static const esp_partition_t *s_update_partition = NULL;
 static uint32_t s_ota_pkt_count = 0;
@@ -97,6 +99,48 @@ static const esp_gatts_attr_db_t ota_gatt_db[OTA_HANDLE_COUNT] = {
                         ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
                         sizeof(uint16_t), sizeof(s_cccd_default), s_cccd_default}},
 };
+
+static bool ota_event_belongs_to_app(esp_gatts_cb_event_t event,
+                                     esp_gatt_if_t gatts_if,
+                                     esp_ble_gatts_cb_param_t *param)
+{
+    if (event == ESP_GATTS_REG_EVT) {
+        return param->reg.app_id == OTA_GATTS_APP_ID;
+    }
+
+    if (s_gatts_if == 0) {
+        return false;
+    }
+
+    return gatts_if == ESP_GATT_IF_NONE || gatts_if == s_gatts_if;
+}
+
+static void request_fast_conn_params_once(const esp_bd_addr_t remote_bda)
+{
+    if (s_conn_params_requested &&
+        memcmp(s_conn_bda, remote_bda, ESP_BD_ADDR_LEN) == 0) {
+        ESP_LOGD(OTA_TAG, "Fast conn params already requested for this link");
+        return;
+    }
+
+    memcpy(s_conn_bda, remote_bda, sizeof(s_conn_bda));
+    s_conn_params_requested = true;
+
+    esp_ble_conn_update_params_t conn_params = {0};
+    memcpy(conn_params.bda, remote_bda, sizeof(esp_bd_addr_t));
+    conn_params.min_int = OTA_CONN_INT_MIN;
+    conn_params.max_int = OTA_CONN_INT_MAX;
+    conn_params.latency = OTA_CONN_LATENCY;
+    conn_params.timeout = OTA_CONN_TIMEOUT;
+
+    esp_err_t conn_ret = esp_ble_gap_update_conn_params(&conn_params);
+    if (conn_ret != ESP_OK) {
+        ESP_LOGW(OTA_TAG, "update_conn_params failed: %s", esp_err_to_name(conn_ret));
+    } else {
+        ESP_LOGI(OTA_TAG, "Requested fast conn params min=%u max=%u",
+                 conn_params.min_int, conn_params.max_int);
+    }
+}
 
 static void ota_notify_status(uint8_t status)
 {
@@ -225,6 +269,10 @@ static void ota_gatts_event_handler(esp_gatts_cb_event_t event,
                                     esp_gatt_if_t gatts_if,
                                     esp_ble_gatts_cb_param_t *param)
 {
+    if (!ota_event_belongs_to_app(event, gatts_if, param)) {
+        return;
+    }
+
     switch (event) {
     case ESP_GATTS_REG_EVT:
         s_gatts_if = gatts_if;
@@ -234,7 +282,9 @@ static void ota_gatts_event_handler(esp_gatts_cb_event_t event,
 
     case ESP_GATTS_CREAT_ATTR_TAB_EVT:
         if (param->add_attr_tab.status == ESP_GATT_OK &&
-            param->add_attr_tab.num_handle == OTA_HANDLE_COUNT) {
+            param->add_attr_tab.num_handle == OTA_HANDLE_COUNT &&
+            param->add_attr_tab.svc_uuid.len == ESP_UUID_LEN_16 &&
+            param->add_attr_tab.svc_uuid.uuid.uuid16 == OTA_SERVICE_UUID) {
             memcpy(s_handle_table, param->add_attr_tab.handles, sizeof(s_handle_table));
             esp_ble_gatts_start_service(s_handle_table[IDX_SVC]);
         }
@@ -244,24 +294,14 @@ static void ota_gatts_event_handler(esp_gatts_cb_event_t event,
         s_is_connected = true;
         s_conn_id = param->connect.conn_id;
         app_ble_hid_set_ota_link_state(true);
-        esp_ble_conn_update_params_t conn_params = {0};
-        memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
-        conn_params.min_int = OTA_CONN_INT_MIN;
-        conn_params.max_int = OTA_CONN_INT_MAX;
-        conn_params.latency = OTA_CONN_LATENCY;
-        conn_params.timeout = OTA_CONN_TIMEOUT;
-        esp_err_t conn_ret = esp_ble_gap_update_conn_params(&conn_params);
-        if (conn_ret != ESP_OK) {
-            ESP_LOGW(OTA_TAG, "update_conn_params failed: %s", esp_err_to_name(conn_ret));
-        } else {
-            ESP_LOGI(OTA_TAG, "Requested fast conn params min=%u max=%u",
-                     conn_params.min_int, conn_params.max_int);
-        }
+        request_fast_conn_params_once(param->connect.remote_bda);
         break;
 
     case ESP_GATTS_DISCONNECT_EVT:
         s_is_connected = false;
         s_conn_id = 0;
+        s_conn_params_requested = false;
+        memset(s_conn_bda, 0, sizeof(s_conn_bda));
         ota_abort_internal();
         app_ble_hid_set_ota_link_state(false);
         app_ble_hid_restart_advertising();
