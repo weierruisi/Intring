@@ -18,10 +18,11 @@
 
 💡 **Intring** 是一个基于 `ESP32-C3` 的智能交互戒指项目，集成轨迹球、空鼠、手势识别、BLE HID、低功耗休眠与 BLE OTA 升级。
 
-- 📺 演示视频：`后续发布`
-- 🧩 硬件资料：`后续发布`
+- 📺 演示视频：[Bilibili](https://www.bilibili.com/video/BV1hXLR6JEks/)
+- 🧩 硬件资料：[Intring V1](https://www.jlc-ycs.com/platform/detail/f7513283168043cfa72ec83cd0e0180a) / [充电仓](https://www.jlc-ycs.com/platform/detail/a2e6c5c35f034d558feaef7857bcfce5?type=1)
 - 🚀 适用场景：迷你鼠标、体感遥控、演示控制、移动端快捷操作
 - 👓 适用设备：AR/VR/MR眼镜、平板、PC等
+- **复刻过程中遇到问题，请加入QQ群讨论：937579864**
 
 ## 📷 实物图
 
@@ -39,8 +40,8 @@
 
 | 项目 | 内容 |
 | --- | --- |
-| 📺 演示视频 | `TODO` |
-| 🧩 硬件下载 | `TODO` |
+| 📺 演示视频 | [Bilibili](https://www.bilibili.com/video/BV1hXLR6JEks/) |
+| 🧩 硬件下载 | [Intring V1](https://www.jlc-ycs.com/platform/detail/f7513283168043cfa72ec83cd0e0180a)<br>[充电仓](https://www.jlc-ycs.com/platform/detail/a2e6c5c35f034d558feaef7857bcfce5?type=1) |
 | 🔧 主控芯片 | `ESP32-C3` |
 | 📡 主要通信 | `BLE HID` / `BLE OTA` |
 | 🛠️ 目标 IDF | `ESP-IDF v5.3.1` |
@@ -412,3 +413,4 @@ python tools/nn/train_model.py
 本仓库中的固件与软件源码基于 [Apache License 2.0](./LICENSE) 开源。
 > [!WARNING]
 > 硬件设计文件未包含在本仓库中，例如原理图、PCB、Gerber、BOM、结构文件等。相关硬件资料在硬创社单独提供，具体授权与使用范围以硬创社页面说明为准。
+> 硬件资料入口：[Intring V1](https://www.jlc-ycs.com/platform/detail/f7513283168043cfa72ec83cd0e0180a) / [充电仓](https://www.jlc-ycs.com/platform/detail/a2e6c5c35f034d558feaef7857bcfce5?type=1)。

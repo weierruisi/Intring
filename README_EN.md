@@ -17,8 +17,8 @@
 
 💡 **Intring** is an `ESP32-C3` smart interactive ring project with trackball input, air-mouse control, gesture recognition, BLE HID, low-power sleep, and BLE OTA upgrades.
 
-- 📺 Demo Video: `Coming soon`
-- 🧩 Hardware Package: `Coming soon`
+- 📺 Demo Video: [Bilibili](https://www.bilibili.com/video/BV1hXLR6JEks/)
+- 🧩 Hardware Package: [Intring V1](https://www.jlc-ycs.com/platform/detail/f7513283168043cfa72ec83cd0e0180a) / [Charging Case](https://www.jlc-ycs.com/platform/detail/a2e6c5c35f034d558feaef7857bcfce5?type=1)
 - 🚀 Use Cases: mini mouse, motion remote, presentation control, mobile shortcuts
 - 👓 Applicable Devices: AR/VR/MR glasses, tablets, PCs, etc.
 
@@ -35,8 +35,8 @@
 
 | Item | Value |
 | --- | --- |
-| 📺 Demo Video | `TODO` |
-| 🧩 Hardware Download | `TODO` |
+| 📺 Demo Video | [Bilibili](https://www.bilibili.com/video/BV1hXLR6JEks/) |
+| 🧩 Hardware Download | [Intring V1](https://www.jlc-ycs.com/platform/detail/f7513283168043cfa72ec83cd0e0180a)<br>[Charging Case](https://www.jlc-ycs.com/platform/detail/a2e6c5c35f034d558feaef7857bcfce5?type=1) |
 | 🔧 MCU | `ESP32-C3` |
 | 📡 Main Protocols | `BLE HID` / `BLE OTA` |
 | 🛠️ Target IDF | `ESP-IDF v5.3.1` |
@@ -409,3 +409,4 @@ Firmware and software source code in this repository are licensed under the [Apa
 
 > [!WARNING]
 > Hardware design files are not included in this repository, including schematics, PCB files, Gerber files, BOM, and enclosure/mechanical files. Hardware materials are provided separately on 硬创社, and their allowed usage should follow the terms stated on that platform.
+> Hardware package links: [Intring V1](https://www.jlc-ycs.com/platform/detail/f7513283168043cfa72ec83cd0e0180a) / [Charging Case](https://www.jlc-ycs.com/platform/detail/a2e6c5c35f034d558feaef7857bcfce5?type=1).
